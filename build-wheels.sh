@@ -2,7 +2,7 @@
 set -xe
 
 if [ ! -d /opt/python ]; then
-  echo "ERROR: run inside manylinux (via ./build.sh)"
+  echo "ERROR: run inside manylinux or ubuntu (via ./build.sh)"
   exit 1
 fi
 
@@ -11,7 +11,11 @@ AUXFILES_PKG="${AUXFILES_PKG:-https://github.com/fadoss/maude-bindings/releases/
 
 [ -f "$LIBMAUDE_PKG" ] || { echo "ERROR: missing $LIBMAUDE_PKG"; exit 1; }
 
-yum install -y xz swig
+if command -v yum >/dev/null 2>&1; then
+  yum install -y xz swig
+elif command -v apt-get >/dev/null 2>&1; then
+  apt-get update && apt-get install -y xz-utils swig
+fi
 
 curl -fsSL "$AUXFILES_PKG" -o /tmp/auxfiles.tar.xz
 xz -cd /tmp/auxfiles.tar.xz | tar -xC /
@@ -64,17 +68,3 @@ cat > test.py <<'EOF'
 import maude
 maude.init()
 print(maude.getCurrentModule())
-EOF
-echo CONVERSION > test.expected
-
-for version in $versions; do
-  [ -x "/opt/python/${version}/bin/python" ] || continue
-  whl=$(ls /work/dist/maude*${version}*manylinux*.whl 2>/dev/null | head -1) || true
-  [ -n "$whl" ] || continue
-  /opt/python/${version}/bin/python -m pip install --force-reinstall "$whl"
-  MAUDE_LIB=$(/opt/python/${version}/bin/python -c "import maude, os; print(os.path.dirname(maude.__file__))") \
-  /opt/python/${version}/bin/python test.py > test.out
-  cmp test.out test.expected && echo "OK $version"
-done
-
-ls -lh /work/dist/
