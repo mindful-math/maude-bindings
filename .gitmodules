@@ -1,4 +1,4 @@
 [submodule "subprojects/maudesmc"]
 	path = subprojects/maudesmc
 	url = https://github.com/mindful-math/maudesmc
-	branch = feature/finite-set-theory-support-cvc5
+	branch = feature/array-and-sequence-theories-cvc5 
